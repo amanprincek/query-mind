@@ -124,6 +124,33 @@ def test_gemini_not_found_error_is_actionable_and_does_not_expose_key(
     assert "provider response containing a secret" not in result.error
 
 
+def test_gemini_quota_error_is_actionable_and_does_not_expose_key(
+    engine: AIEngine,
+) -> None:
+    from google.genai.errors import ClientError
+
+    engine._client = MagicMock()
+    engine._client.interactions.create.side_effect = ClientError(
+        429,
+        {
+            "error": {
+                "status": "RESOURCE_EXHAUSTED",
+                "message": "Quota exceeded for secret-project",
+            }
+        },
+    )
+
+    result = engine.generate("anything", {})
+
+    assert result.sql is None
+    assert result.error is not None
+    assert "quota or rate limit is exhausted" in result.error
+    assert engine.model_name in result.error
+    assert "Google AI Studio" in result.error
+    assert "secret-project" not in result.error
+    assert "test-key" not in result.error
+
+
 def test_gemini_model_is_configurable(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("GEMINI_MODEL", "gemini-3.5-flash")
     e = AIEngine(provider="gemini", api_key="test-key")

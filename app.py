@@ -417,7 +417,8 @@ def main() -> None:
         st.rerun()
 
     if ask and question.strip():
-        handle_question(question.strip(), db, safety, clarifier, ai)
+        with st.spinner("Generating and running your query..."):
+            handle_question(question.strip(), db, safety, clarifier, ai)
 
     render_current(db)
 
