@@ -150,7 +150,10 @@ class AIEngine:
 
         self._client = genai.Client(
             api_key=self.api_key,
-            http_options=genai.types.HttpOptions(timeout=60_000),
+            http_options=genai.types.HttpOptions(
+                timeout=60_000,
+                retry_options=genai.types.HttpRetryOptions(attempts=1),
+            ),
         )
         self._available = True
         self._init_error = None
@@ -348,8 +351,10 @@ class AIEngine:
             )
         if code == 429 or status in ("RESOURCE_EXHAUSTED", "TOO_MANY_REQUESTS"):
             return (
-                "Gemini API quota or rate limit reached. Wait and retry, or "
-                "review the quota for this API key."
+                f"Gemini quota or rate limit is exhausted for model "
+                f"'{self.model_name}'. Wait for the quota to reset or review "
+                "the Google AI Studio project's plan, billing, and model-specific "
+                "rate limits. This request was not automatically retried."
             )
         if code == 400 or status == "INVALID_ARGUMENT":
             return (
